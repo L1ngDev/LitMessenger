@@ -13,7 +13,7 @@ struct ChatListView: View {
     var body: some View {
         NavigationStack(path: $path) {
             ZStack {
-                Color(red: 0.090, green: 0.129, blue: 0.168).ignoresSafeArea()
+                Color(red: 0.055, green: 0.086, blue: 0.129).ignoresSafeArea()
                 List {
                     TLSearchField(text: $query)
                         .listRowSeparator(.hidden)

@@ -4,51 +4,79 @@ struct SettingsView: View {
     @EnvironmentObject var session: SessionStore
     @State private var user: User?
 
+    private var name: String { user?.displayName ?? user?.username ?? "Профиль" }
+    private var username: String { user?.username ?? "" }
+
     var body: some View {
-        List {
-            Section {
+        ScrollView {
+            VStack(spacing: 14) {
+                // Profile header card
                 HStack(spacing: 14) {
-                    AvatarView(title: (user?.displayName ?? user?.username) ?? "?", size: 64)
+                    AvatarView(title: name, size: 60)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(user?.displayName ?? user?.username ?? "Профиль")
+                        Text(name)
                             .font(.system(size: 20, weight: .semibold)).foregroundColor(.white)
-                        if let u = user?.username {
-                            Text("@" + u).font(.system(size: 14)).foregroundColor(.gray)
+                        if !username.isEmpty {
+                            Text("@" + username)
+                                .font(.system(size: 14)).foregroundColor(.gray)
                         }
                     }
+                    Spacer()
+                    Image(systemName: "chevron.right").foregroundColor(.gray)
                 }
-                .listRowBackground(Color.clear)
-            }
+                .padding(14)
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color(red: 0.090, green: 0.129, blue: 0.168)))
 
-            Section("Основное") {
-                SettingsRow(icon: "person.2.fill", title: "Участники и группы", color: .blue)
-                SettingsRow(icon: "bell.fill", title: "Уведомления", color: .red)
-                SettingsRow(icon: "lock.fill", title: "Конфиденциальность", color: .green)
-            }
-            .listRowBackground(Color.clear)
+                SettingsCard(title: "Аккаунт", rows: [
+                    SettingsRow(icon: "person.fill", color: .blue, title: "Изменить имя", value: name),
+                    SettingsRow(icon: "at", color: .blue, title: "Юзернейм", value: "@" + username),
+                    SettingsRow(icon: "phone.fill", color: .green, title: "Номер телефона", value: "—"),
+                    SettingsRow(icon: "info.circle.fill", color: .orange, title: "Био", value: "—"),
+                ])
 
-            Section("Прочее") {
-                SettingsRow(icon: "questionmark.circle.fill", title: "Помощь", color: .orange)
-                SettingsRow(icon: "info.circle.fill", title: "О приложении", color: .gray)
-            }
-            .listRowBackground(Color.clear)
+                SettingsCard(title: "Уведомления и звуки", rows: [
+                    SettingsRow(icon: "bell.fill", color: .red, title: "Уведомления"),
+                    SettingsRow(icon: "speaker.wave.2.fill", color: .red, title: "Звуки сообщений"),
+                ])
 
-            Section {
+                SettingsCard(title: "Конфиденциальность", rows: [
+                    SettingsRow(icon: "lock.fill", color: .pink, title: "Конфиденциальность"),
+                    SettingsRow(icon: "eye.slash.fill", color: .pink, title: "Блокировка экран"),
+                ])
+
+                SettingsCard(title: "Данные и память", rows: [
+                    SettingsRow(icon: "chart.bar.fill", color: .purple, title: "Использование данных"),
+                    SettingsRow(icon: "internaldrive.fill", color: .purple, title: "Память"),
+                ])
+
+                SettingsCard(title: "Внешний вид", rows: [
+                    SettingsRow(icon: "paintbrush.fill", color: .blue, title: "Тема оформления", value: "Тёмная"),
+                    SettingsRow(icon: "textformat.size", color: .blue, title: "Размер текста"),
+                ])
+
+                SettingsCard(title: "Чаты", rows: [
+                    SettingsRow(icon: "bubble.left.fill", color: .green, title: "Оформление чатов"),
+                    SettingsRow(icon: "globe", color: .green, title: "Язык"),
+                ])
+
                 Button {
                     session.logout()
                 } label: {
-                    HStack {
-                        Spacer()
-                        Text("Выйти из аккаунта")
-                            .foregroundColor(.red).font(.system(size: 16, weight: .medium))
-                        Spacer()
-                    }
+                    Text("Выйти из аккаунта")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.red)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(14)
+                        .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color(red: 0.090, green: 0.129, blue: 0.168)))
                 }
+                .padding(.horizontal, 12)
             }
-            .listRowBackground(Color.clear)
+            .padding(.top, 14)
+            .padding(.bottom, 24)
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
+        .background(Color(red: 0.055, green: 0.086, blue: 0.129).ignoresSafeArea())
         .navigationTitle("Настройки")
         .glassToolbar()
         .toolbarColorScheme(.dark, for: .navigationBar)
@@ -64,17 +92,64 @@ struct SettingsView: View {
 
 struct SettingsRow: View {
     let icon: String
-    let title: String
     let color: Color
+    let title: String
+    var value: String = ""
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).foregroundColor(.white)
+            Image(systemName: icon)
+                .foregroundColor(.white)
+                .font(.system(size: 15))
                 .frame(width: 30, height: 30)
-                .background(Circle().fill(color))
-            Text(title).foregroundColor(.white)
+                .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(color))
+            Text(title)
+                .foregroundColor(.white)
+                .font(.system(size: 15))
             Spacer()
-            Image(systemName: "chevron.right").foregroundColor(.gray)
+            if !value.isEmpty {
+                Text(value)
+                    .foregroundColor(.gray)
+                    .font(.system(size: 14))
+                    .lineLimit(1)
+            }
+            Image(systemName: "chevron.right")
+                .foregroundColor(.gray)
+                .font(.system(size: 13))
         }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+    }
+}
+
+struct SettingsCard: View {
+    var title: String? = nil
+    let rows: [SettingsRow]
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if let title {
+                Text(title.uppercased())
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 6)
+            }
+            VStack(spacing: 0) {
+                ForEach(Array(rows.enumerated()), id: \.offset) { i, row in
+                    row
+                    if i < rows.count - 1 {
+                        Divider()
+                            .background(Color.white.opacity(0.06))
+                            .padding(.leading, 54)
+                    }
+                }
+            }
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(red: 0.090, green: 0.129, blue: 0.168)))
+        }
+        .padding(.horizontal, 12)
     }
 }

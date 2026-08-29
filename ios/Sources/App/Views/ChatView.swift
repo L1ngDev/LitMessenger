@@ -59,7 +59,7 @@ struct ChatView: View {
                     }
                     .padding(.vertical, 6)
                 }
-                .background(Color(red: 0.090, green: 0.129, blue: 0.168))
+                .background(Color(red: 0.055, green: 0.086, blue: 0.129))
                 .onChange(of: messages.count) { _, _ in
                     if let last = messages.last {
                         withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
