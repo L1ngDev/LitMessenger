@@ -73,7 +73,7 @@ struct ChatView: View {
                     if let c = chat, c.isGroup {
                         Text("\(c.members?.count ?? 0) участников")
                             .font(.system(size: 12)).foregroundColor(.gray)
-                    } else if let c = chat {
+                    } else if chat != nil {
                         Text("личный чат").font(.system(size: 12)).foregroundColor(.gray)
                     }
                 }

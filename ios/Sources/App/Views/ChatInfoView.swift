@@ -25,7 +25,7 @@ struct ChatInfoView: View {
                     }
                     Spacer()
                     if isAdmin {
-                        Button { newTitle = chat.titleText ?? ""; showRename = true } label: {
+                        Button { newTitle = chat.titleText; showRename = true } label: {
                             Image(systemName: "pencil").foregroundColor(.blue)
                         }
                     }

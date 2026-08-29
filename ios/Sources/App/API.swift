@@ -110,17 +110,17 @@ struct APIClient {
     struct EmptyResponse: Decodable {}
 
     static func addMember(chatId: Int, userId: Int, token: String) async throws {
-        _ = try await request<EmptyResponse>("/api/chats/\(chatId)/members", method: "POST",
-                                             params: ["user_id": userId], token: token)
+        let _: EmptyResponse = try await request("/api/chats/\(chatId)/members", method: "POST",
+                                                 params: ["user_id": userId], token: token)
     }
 
     static func removeMember(chatId: Int, userId: Int, token: String) async throws {
-        _ = try await request<EmptyResponse>("/api/chats/\(chatId)/members/\(userId)", method: "DELETE", token: token)
+        let _: EmptyResponse = try await request("/api/chats/\(chatId)/members/\(userId)", method: "DELETE", token: token)
     }
 
     static func renameGroup(chatId: Int, title: String, token: String) async throws {
-        _ = try await request<EmptyResponse>("/api/chats/\(chatId)", method: "PATCH",
-                                             params: ["title": title], token: token)
+        let _: EmptyResponse = try await request("/api/chats/\(chatId)", method: "PATCH",
+                                                 params: ["title": title], token: token)
     }
 
     static func search(q: String, token: String) async throws -> SearchResult {

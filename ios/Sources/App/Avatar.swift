@@ -51,7 +51,7 @@ func chatTime(_ s: String?) -> String {
     let fmt = DateFormatter()
     if cal.isDateInToday(d) { fmt.dateFormat = "HH:mm" }
     else if cal.isDateInYesterday(d) { return "Вчера" }
-    else if cal.isDateInThisYear(d) { fmt.dateFormat = "dd MMM" }
+    else if cal.component(.year, from: d) == cal.component(.year, from: Date()) { fmt.dateFormat = "dd MMM" }
     else { fmt.dateFormat = "dd.MM.yy" }
     return fmt.string(from: d)
 }
