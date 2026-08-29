@@ -1,0 +1,9 @@
+services:
+  backend:
+    build: .
+    # host networking lets the container reach MySQL on 127.0.0.1 of the VDS
+    network_mode: host
+    env_file: .env
+    restart: always
+    volumes:
+      - ./uploads:/app/uploads

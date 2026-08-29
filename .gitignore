@@ -1,0 +1,8 @@
+# Secrets / build artifacts (never commit)
+backend/.env
+backend/uploads/
+backend/node_modules/
+*.ipa
+Payload/
+build/
+DerivedData/
