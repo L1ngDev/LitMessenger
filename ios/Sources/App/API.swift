@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-let APIBaseURL = "http://157.228.137.204"
+let APIBaseURL = "http://157.228.137.204/msg"
 
 enum APIError: LocalizedError {
     case invalidResponse
