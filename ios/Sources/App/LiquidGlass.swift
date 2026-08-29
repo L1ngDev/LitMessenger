@@ -13,7 +13,7 @@ extension View {
     @ViewBuilder
     func glassToolbar() -> some View {
         if #available(iOS 26.0, *) {
-            self.toolbarBackground(.glassEffect(), for: .navigationBar)
+            self.toolbarBackground(.visible, for: .navigationBar)
         } else {
             self.toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         }
@@ -22,7 +22,7 @@ extension View {
     @ViewBuilder
     func glassTabBar() -> some View {
         if #available(iOS 26.0, *) {
-            self.toolbarBackground(.glassEffect(), for: .tabBar)
+            self.toolbarBackground(.visible, for: .tabBar)
         } else {
             self
         }
