@@ -17,6 +17,7 @@ struct ChatView: View {
     @State private var text = ""
     @State private var busy = false
     @State private var showInfo = false
+    @State private var showProfile = false
     @State private var showPicker = false
 
     var body: some View {
@@ -95,16 +96,34 @@ struct ChatView: View {
         .navigationBarTitleDisplayMode(.inline)
         .glassToolbar()
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                VStack(spacing: 1) {
-                    Text(chat?.titleText ?? "Чат")
-                        .font(.system(size: 16, weight: .semibold)).foregroundColor(.white)
-                    if let c = chat, c.isGroup {
-                        Text("\(c.members?.count ?? 0) участников")
-                            .font(.system(size: 12)).foregroundColor(.gray)
-                    } else if chat != nil {
-                        Text("личный чат").font(.system(size: 12)).foregroundColor(.gray)
+                Button {
+                    if chat?.isGroup == true { showInfo = true } else { showProfile = true }
+                } label: {
+                    HStack(spacing: 8) {
+                        if let c = chat, c.isGroup {
+                            VStack(spacing: 1) {
+                                Text(c.titleText)
+                                    .font(.system(size: 16, weight: .semibold)).foregroundColor(.white)
+                                Text("\(c.members?.count ?? 0) участников")
+                                    .font(.system(size: 12)).foregroundColor(.gray)
+                            }
+                        } else if let u = chat?.otherUser {
+                            AvatarView(title: u.displayName ?? u.username, size: 30)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(u.displayName ?? u.username)
+                                    .font(.system(size: 16, weight: .semibold)).foregroundColor(.white)
+                                Text("в сети")
+                                    .font(.system(size: 12)).foregroundColor(.gray)
+                            }
+                        } else {
+                            VStack(spacing: 1) {
+                                Text(chat?.titleText ?? "Чат")
+                                    .font(.system(size: 16, weight: .semibold)).foregroundColor(.white)
+                            }
+                        }
                     }
                 }
             }
@@ -118,6 +137,9 @@ struct ChatView: View {
         }
         .navigationDestination(isPresented: $showInfo) {
             if let c = chat { ChatInfoView(chat: c).environmentObject(session) }
+        }
+        .navigationDestination(isPresented: $showProfile) {
+            if let u = chat?.otherUser { UserProfileView(user: u).environmentObject(session) }
         }
         .sheet(isPresented: $showPicker) {
             ImagePicker { image in Task { await sendImage(image) } }
@@ -263,5 +285,44 @@ struct DateSeparator: View {
                 .background(Capsule().fill(Color.white.opacity(0.12)))
             Spacer()
         }
+    }
+}
+
+struct UserProfileView: View {
+    @Environment(\.dismiss) var dismiss
+    let user: User
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                AvatarView(title: user.displayName ?? user.username, size: 96)
+                    .padding(.top, 30)
+                Text(user.displayName ?? user.username)
+                    .font(.system(size: 22, weight: .semibold)).foregroundColor(.white)
+                Text("@" + user.username)
+                    .font(.system(size: 15)).foregroundColor(.gray)
+
+                Button {
+                    dismiss()
+                } label: {
+                    Text("Написать")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(12)
+                        .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color(red: 0.20, green: 0.60, blue: 0.86)))
+                }
+                .padding(.horizontal, 30)
+                .padding(.top, 10)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .background(Color(red: 0.055, green: 0.086, blue: 0.129).ignoresSafeArea())
+        .navigationTitle("Профиль")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .preferredColorScheme(.dark)
     }
 }

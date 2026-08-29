@@ -84,17 +84,10 @@ struct ChatListView: View {
                         .background(Circle().fill(Color(red: 0.20, green: 0.60, blue: 0.86)))
                         .shadow(color: .black.opacity(0.4), radius: 8, y: 4)
                 }
-                .padding(.trailing, 20)
-                .padding(.bottom, 78)
-            }
-            .overlay(alignment: .bottom) {
-                BottomTabBar(onSettings: { path.append("settings") })
+                .padding(20)
             }
             .navigationDestination(for: Int.self) { id in
                 ChatView(chatId: id).environmentObject(session)
-            }
-            .navigationDestination(for: String.self) { dest in
-                if dest == "settings" { SettingsView().environmentObject(session) }
             }
             .sheet(isPresented: $showNew) {
                 NewChatSheet().environmentObject(session)
@@ -316,39 +309,5 @@ struct NewChatSheet: View {
                                                     memberIds: Array(selected), token: t)
             dismiss()
         } catch { print(error) }
-    }
-}
-
-struct BottomTabBar: View {
-    let onSettings: () -> Void
-    var body: some View {
-        VStack(spacing: 0) {
-            Divider().background(Color.white.opacity(0.08))
-            HStack(spacing: 0) {
-                Spacer()
-                BottomTab(icon: "message.fill", label: "Чаты", active: true, action: {})
-                Spacer()
-                BottomTab(icon: "gear", label: "Настройки", active: false, action: onSettings)
-                Spacer()
-            }
-            .padding(.vertical, 7)
-        }
-        .liquidGlass()
-    }
-}
-
-struct BottomTab: View {
-    let icon: String
-    let label: String
-    let active: Bool
-    let action: () -> Void
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 3) {
-                Image(systemName: icon).font(.system(size: 22))
-                Text(label).font(.system(size: 11))
-            }
-            .foregroundColor(active ? Color(red: 0.20, green: 0.60, blue: 0.86) : .gray)
-        }
     }
 }
