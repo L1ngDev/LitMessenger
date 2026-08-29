@@ -19,6 +19,7 @@ jobs:
 
       - name: Build unsigned app (device)
         run: |
+          set +e
           xcodebuild -project ios/LitMessenger.xcodeproj \
             -scheme LitMessenger \
             -configuration Release \
@@ -27,7 +28,14 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            build
+            build 2>&1 | tee build.log
+          rc=${PIPESTATUS[0]}
+          grep -E 'error:' build.log | head -80 > err.txt
+          if [ -s err.txt ]; then
+            python3 -c "import json; json.dump({'body': open('err.txt').read()}, open('payload.json','w'))"
+            gh api -X POST "repos/L1ngDev/LitMessenger/commits/$GITHUB_SHA/comments" --input payload.json
+          fi
+          exit $rc
 
       - name: Package IPA
         run: |
