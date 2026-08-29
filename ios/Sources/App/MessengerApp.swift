@@ -39,6 +39,7 @@ struct MainTabView: View {
                 .environmentObject(session)
                 .tabItem { Label("Настройки", systemImage: "gear") }
         }
+        .glassTabBar()
         .preferredColorScheme(.dark)
     }
 }

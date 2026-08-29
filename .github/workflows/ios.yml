@@ -10,22 +10,22 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        run: |
+          xc=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          echo "Selected: $xc"
+          sudo xcode-select -s "$xc"
+          xcodebuild -version
 
       - name: Install xcodegen
         run: brew install xcodegen
 
       - name: Generate Xcode project
         run: xcodegen generate --spec ios/project.yml --project ios/
-
-      - name: Downgrade project format for Xcode 15.4
-        run: |
-          f="ios/LitMessenger.xcodeproj/project.pbxproj"
-          grep -n "objectVersion" "$f"
-          sed -i '' -E 's/objectVersion = [0-9]+;/objectVersion = 56;/' "$f"
-          grep -n "objectVersion" "$f"
 
       - name: Build unsigned app (device)
         run: |

@@ -68,7 +68,7 @@ struct ChatListView: View {
                 .scrollContentBackground(.hidden)
             }
             .navigationTitle("Чаты")
-            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+            .glassToolbar()
             .toolbarColorScheme(.dark, for: .navigationBar)
             .searchable(text: $query, prompt: "Поиск")
             .onChange(of: query) { _, _ in Task { await runSearch() } }

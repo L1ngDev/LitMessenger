@@ -50,7 +50,7 @@ struct SettingsView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .navigationTitle("Настройки")
-        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .glassToolbar()
         .toolbarColorScheme(.dark, for: .navigationBar)
         .task { await load() }
         .preferredColorScheme(.dark)

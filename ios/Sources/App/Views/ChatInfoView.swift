@@ -81,7 +81,7 @@ struct ChatInfoView: View {
         .scrollContentBackground(.hidden)
         .navigationTitle("Информация")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .glassToolbar()
         .toolbarColorScheme(.dark, for: .navigationBar)
         .alert("Переименовать", isPresented: $showRename) {
             TextField("Название", text: $newTitle)
