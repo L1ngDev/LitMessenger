@@ -6,6 +6,9 @@ func fullUrl(_ s: String?) -> URL? {
     return URL(string: APIBaseURL + s)
 }
 
+let tgIncoming = Color(red: 0.122, green: 0.173, blue: 0.227)
+let tgOutgoing = Color(red: 0.169, green: 0.322, blue: 0.471)
+
 struct ChatView: View {
     let chatId: Int
     @EnvironmentObject var session: SessionStore
@@ -15,22 +18,46 @@ struct ChatView: View {
     @State private var busy = false
     @State private var showInfo = false
     @State private var showPicker = false
-    @State private var scrollID: String?
 
     var body: some View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(spacing: 2) {
-                        ForEach(messages) { msg in
-                            MessageBubble(message: msg,
-                                          isOutgoing: msg.senderId == session.currentUser?.id,
-                                          showName: chat?.isGroup == true && msg.senderId != session.currentUser?.id)
-                                .id(msg.id)
+                    LazyVStack(spacing: 0) {
+                        ForEach(Array(messages.enumerated()), id: \.element.id) { idx, msg in
+                            let prev = idx > 0 ? messages[idx - 1] : nil
+                            let showDate = shouldShowDate(prev: prev, cur: msg)
+                            let outgoing = isOutgoing(msg)
+                            let showName = !outgoing && chat?.isGroup == true &&
+                                (prev == nil || prev?.senderId != msg.senderId)
+                            let showAvatar = !outgoing && chat?.isGroup == true &&
+                                (prev == nil || prev?.senderId != msg.senderId)
+                            VStack(spacing: 0) {
+                                if showDate {
+                                    DateSeparator(text: dateText(msg.createdAt))
+                                        .padding(.top, 10).padding(.bottom, 4)
+                                }
+                                HStack(alignment: .bottom, spacing: 6) {
+                                    if outgoing {
+                                        Spacer(minLength: 48)
+                                        Bubble(message: msg, outgoing: true, showName: false)
+                                    } else {
+                                        if showAvatar {
+                                            AvatarView(title: msg.senderName ?? "?", size: 30)
+                                                .padding(.bottom, 2)
+                                        } else {
+                                            Spacer().frame(width: 30)
+                                        }
+                                        Bubble(message: msg, outgoing: false, showName: showName)
+                                        Spacer(minLength: 48)
+                                    }
+                                }
                                 .padding(.horizontal, 8)
+                                .padding(.top, gapBefore(prev: prev, cur: msg))
+                            }
                         }
                     }
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 6)
                 }
                 .background(Color(red: 0.05, green: 0.05, blue: 0.07))
                 .onChange(of: messages.count) { _, _ in
@@ -40,7 +67,7 @@ struct ChatView: View {
                 }
             }
 
-            Divider().background(Color.white.opacity(0.1))
+            Divider().background(Color.white.opacity(0.08))
             HStack(spacing: 10) {
                 Button { showPicker = true } label: {
                     Image(systemName: "photo").font(.system(size: 22)).foregroundColor(.gray)
@@ -126,50 +153,94 @@ struct ChatView: View {
             await reload()
         } catch { print(error) }
     }
+
+    func isOutgoing(_ m: Message) -> Bool {
+        m.senderId == session.currentUser?.id
+    }
+
+    func shouldShowDate(prev: Message?, cur: Message) -> Bool {
+        guard let cd = isoDate(cur.createdAt) else { return false }
+        if let p = prev, let pd = isoDate(p.createdAt) {
+            return !Calendar.current.isDate(pd, inSameDayAs: cd)
+        }
+        return true
+    }
+
+    func gapBefore(prev: Message?, cur: Message) -> CGFloat {
+        if prev == nil { return 2 }
+        if shouldShowDate(prev: prev, cur: cur) { return 2 }
+        if let p = prev, p.senderId == cur.senderId { return 2 }
+        return 8
+    }
+
+    func dateText(_ s: String?) -> String {
+        guard let d = isoDate(s) else { return "" }
+        if Calendar.current.isDateInToday(d) { return "Сегодня" }
+        if Calendar.current.isDateInYesterday(d) { return "Вчера" }
+        let f = DateFormatter()
+        f.dateFormat = "d MMMM yyyy"
+        f.locale = Locale(identifier: "ru_RU")
+        return f.string(from: d)
+    }
 }
 
-struct MessageBubble: View {
+struct Bubble: View {
     let message: Message
-    let isOutgoing: Bool
+    let outgoing: Bool
     let showName: Bool
 
     var body: some View {
-        HStack {
-            if isOutgoing { Spacer(minLength: 40) }
-            VStack(alignment: isOutgoing ? .trailing : .leading, spacing: 3) {
-                if showName, let name = message.senderName {
-                    Text(name)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(AvatarView.color(for: name))
-                        .padding(.horizontal, 6)
-                }
+        VStack(alignment: outgoing ? .trailing : .leading, spacing: 2) {
+            if showName, let name = message.senderName {
+                Text(name)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(AvatarView.color(for: name))
+                    .padding(.leading, 6)
+            }
+            HStack(alignment: .bottom, spacing: 5) {
                 if let url = fullUrl(message.attachmentUrl) {
                     AsyncImage(url: url) { img in
                         img.resizable().scaledToFit()
                     } placeholder: {
                         ProgressView().frame(height: 160)
                     }
-                    .frame(maxWidth: 240)
+                    .frame(maxWidth: 240, maxHeight: 260)
                     .cornerRadius(16)
                 }
                 if let txt = message.text, !txt.isEmpty {
                     Text(txt)
                         .font(.system(size: 15))
-                        .foregroundColor(isOutgoing ? .white : .white)
+                        .foregroundColor(.white)
                         .padding(10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(isOutgoing
-                                      ? Color(red: 0.20, green: 0.60, blue: 0.86)
-                                      : Color.white.opacity(0.12))
-                        )
                 }
                 Text(msgTime(message.createdAt))
                     .font(.system(size: 10))
-                    .foregroundColor(.white.opacity(0.5))
-                    .padding(.horizontal, 4)
+                    .foregroundColor(.white.opacity(0.55))
+                    .padding(.bottom, 2)
             }
-            if !isOutgoing { Spacer(minLength: 40) }
+            .padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(outgoing ? tgOutgoing : tgIncoming)
+            )
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: 264, alignment: outgoing ? .trailing : .leading)
+    }
+}
+
+struct DateSeparator: View {
+    let text: String
+    var body: some View {
+        HStack {
+            Spacer()
+            Text(text)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 5)
+                .background(Capsule().fill(Color.white.opacity(0.12)))
+            Spacer()
         }
     }
 }

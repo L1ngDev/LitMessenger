@@ -21,6 +21,9 @@ final class SessionStore: ObservableObject {
 
     init() {
         self.token = UserDefaults.standard.string(forKey: "lit_token")
+        if let t = token {
+            Task { await restore(t) }
+        }
     }
 
     var isLoggedIn: Bool { token != nil }
@@ -35,6 +38,15 @@ final class SessionStore: ObservableObject {
         self.token = nil
         self.currentUser = nil
         UserDefaults.standard.removeObject(forKey: "lit_token")
+    }
+
+    private func restore(_ t: String) async {
+        do {
+            let u = try await APIClient.me(token: t)
+            await MainActor.run { self.currentUser = u }
+        } catch {
+            print("restore me failed: \(error)")
+        }
     }
 }
 
