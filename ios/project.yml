@@ -1,6 +1,7 @@
 name: LitMessenger
 options:
   bundleIdPrefix: com.litmessenger
+  projectFileType: Xcode 15.0-compatible
   deploymentTarget:
     iOS: "17.0"
 targets:
