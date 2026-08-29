@@ -70,24 +70,27 @@ struct ChatView: View {
             Divider().background(Color.white.opacity(0.08))
             HStack(spacing: 10) {
                 Button { showPicker = true } label: {
-                    Image(systemName: "photo").font(.system(size: 22)).foregroundColor(.gray)
+                    Image(systemName: "paperclip")
+                        .font(.system(size: 22))
+                        .foregroundColor(.gray)
+                        .frame(width: 36, height: 36)
                 }
                 TextField("Сообщение", text: $text, axis: .vertical)
                     .padding(10)
-                    .background(RoundedRectangle(cornerRadius: 18).fill(Color.white.opacity(0.08)))
+                    .background(RoundedRectangle(cornerRadius: 19).fill(Color.white.opacity(0.08)))
                     .foregroundColor(.white)
                 Button { Task { await send() } } label: {
                     Image(systemName: text.trimmingCharacters(in: .whitespaces).isEmpty ? "mic" : "paperplane.fill")
-                        .font(.system(size: 20))
+                        .font(.system(size: 19))
                         .foregroundColor(.white)
-                        .frame(width: 40, height: 40)
+                        .frame(width: 42, height: 42)
                         .background(Circle().fill(Color(red: 0.20, green: 0.60, blue: 0.86)))
                 }
                 .disabled(busy)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .liquidGlass()
+            .background(Color(red: 0.055, green: 0.086, blue: 0.129))
         }
         .navigationBarTitleDisplayMode(.inline)
         .glassToolbar()
