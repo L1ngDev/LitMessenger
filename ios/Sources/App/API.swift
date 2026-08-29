@@ -23,6 +23,8 @@ final class SessionStore: ObservableObject {
         self.token = UserDefaults.standard.string(forKey: "lit_token")
     }
 
+    var isLoggedIn: Bool { token != nil }
+
     func completeLogin(token: String, user: User) {
         self.token = token
         self.currentUser = user

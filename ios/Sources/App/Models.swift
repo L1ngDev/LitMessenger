@@ -48,7 +48,7 @@ struct Message: Codable, Identifiable {
     let senderName: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, text, members
+        case id, text
         case chatId = "chat_id"
         case senderId = "sender_id"
         case attachmentUrl = "attachment_url"
