@@ -63,7 +63,8 @@ func msgTime(_ s: String?) -> String {
     return fmt.string(from: d)
 }
 
-func isoDate(_ s: String) -> Date? {
+func isoDate(_ s: String?) -> Date? {
+    guard let s else { return nil }
     let fmt = DateFormatter()
     fmt.dateFormat = "yyyy-MM-dd HH:mm:ss"
     fmt.locale = Locale(identifier: "en_US_POSIX")
