@@ -1,148 +1,175 @@
 import SwiftUI
-import PhotosUI
+
+func fullUrl(_ s: String?) -> URL? {
+    guard let s, !s.isEmpty else { return nil }
+    if s.hasPrefix("http") { return URL(string: s) }
+    return URL(string: APIBaseURL + s)
+}
 
 struct ChatView: View {
-    @EnvironmentObject var session: SessionStore
     let chatId: Int
-
+    @EnvironmentObject var session: SessionStore
+    @State private var chat: Chat?
     @State private var messages: [Message] = []
-    @State private var meta: Chat?
     @State private var text = ""
     @State private var busy = false
-    @State private var photoItem: PhotosPickerItem?
+    @State private var showInfo = false
+    @State private var showPicker = false
+    @State private var scrollID: String?
 
     var body: some View {
-        ZStack {
-            LinearGradient(colors: [Color(hex: 0x0E1C3B), Color(hex: 0x10243F)],
-                           startPoint: .top, endPoint: .bottom).ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        LazyVStack(spacing: 8) {
-                            ForEach(messages) { msg in
-                                MessageBubble(
-                                    msg: msg,
-                                    isOwn: msg.senderId == session.currentUser?.id,
-                                    showSender: msg.senderId != session.currentUser?.id && (meta?.isGroup ?? false)
-                                )
+        VStack(spacing: 0) {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 2) {
+                        ForEach(messages) { msg in
+                            MessageBubble(message: msg,
+                                          isOutgoing: msg.senderId == session.currentUser?.id,
+                                          showName: chat?.isGroup == true && msg.senderId != session.currentUser?.id)
                                 .id(msg.id)
-                            }
-                        }
-                        .padding(.vertical, 8)
-                    }
-                    .onChange(of: messages.count) { _ in
-                        if let last = messages.last {
-                            withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
+                                .padding(.horizontal, 8)
                         }
                     }
+                    .padding(.vertical, 8)
                 }
-
-                HStack(spacing: 8) {
-                    PhotosPicker(selection: $photoItem, matching: .images) {
-                        Image(systemName: "photo").foregroundStyle(.white)
+                .background(Color(red: 0.05, green: 0.05, blue: 0.07))
+                .onChange(of: messages.count) { _, _ in
+                    if let last = messages.last {
+                        withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
                     }
-                    .frame(width: 40, height: 40)
-                    .liquidGlass(cornerRadius: 12)
-
-                    TextField("Сообщение...", text: $text, axis: .vertical)
-                        .padding(12)
-                        .liquidGlass(cornerRadius: 18)
-
-                    Button(action: send) {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 34))
-                            .foregroundStyle(Color(hex: 0x2AABEE))
-                    }
-                    .disabled(busy || text.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
-                .padding(.horizontal, 10)
-                .padding(.bottom, 8)
+            }
+
+            Divider().background(Color.white.opacity(0.1))
+            HStack(spacing: 10) {
+                Button { showPicker = true } label: {
+                    Image(systemName: "photo").font(.system(size: 22)).foregroundColor(.gray)
+                }
+                TextField("Сообщение", text: $text, axis: .vertical)
+                    .padding(10)
+                    .background(RoundedRectangle(cornerRadius: 18).fill(Color.white.opacity(0.08)))
+                    .foregroundColor(.white)
+                Button { Task { await send() } } label: {
+                    Image(systemName: text.trimmingCharacters(in: .whitespaces).isEmpty ? "mic" : "paperplane.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(.white)
+                        .frame(width: 40, height: 40)
+                        .background(Circle().fill(Color(red: 0.20, green: 0.60, blue: 0.86)))
+                }
+                .disabled(busy)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(.ultraThinMaterial)
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                VStack(spacing: 1) {
+                    Text(chat?.titleText ?? "Чат")
+                        .font(.system(size: 16, weight: .semibold)).foregroundColor(.white)
+                    if let c = chat, c.isGroup {
+                        Text("\(c.members?.count ?? 0) участников")
+                            .font(.system(size: 12)).foregroundColor(.gray)
+                    } else if let c = chat {
+                        Text("личный чат").font(.system(size: 12)).foregroundColor(.gray)
+                    }
+                }
+            }
+            if chat?.isGroup == true {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button { showInfo = true } label: {
+                        Image(systemName: "info.circle").foregroundColor(.white)
+                    }
+                }
             }
         }
-        .navigationTitle(meta?.titleText ?? "Чат")
-        .navigationBarTitleDisplayMode(.inline)
-        .task { await load() }
-        .onChange(of: photoItem) { _ in Task { await handlePhoto() } }
-    }
-
-    func load() async {
-        guard let token = session.token else { return }
-        do {
-            messages = try await APIClient.messages(chatId: chatId, token: token)
-        } catch {}
-        if let m = try? await APIClient.chat(id: chatId, token: token) {
-            await MainActor.run { meta = m }
+        .navigationDestination(isPresented: $showInfo) {
+            if let c = chat { ChatInfoView(chat: c).environmentObject(session) }
         }
+        .sheet(isPresented: $showPicker) {
+            ImagePicker { image in Task { await sendImage(image) } }
+        }
+        .task { await reload() }
+        .refreshable { await reload() }
     }
 
-    func send() {
+    func reload() async {
+        guard let t = session.token else { return }
+        async let c = APIClient.chat(id: chatId, token: t)
+        async let m = APIClient.messages(chatId: chatId, token: t)
+        do {
+            chat = try await c
+            messages = try await m
+        } catch { print(error) }
+    }
+
+    func send() async {
         let body = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !body.isEmpty, let token = session.token else { return }
-        busy = true
-        Task {
-            do {
-                let m = try await APIClient.sendMessage(chatId: chatId, text: body,
-                                                        attachmentUrl: nil, token: token)
-                await MainActor.run { messages.append(m); text = "" }
-            } catch {}
-            await MainActor.run { busy = false }
-        }
+        guard !body.isEmpty, let t = session.token else { return }
+        busy = true; defer { busy = false }
+        text = ""
+        do { let _ = try await APIClient.sendMessage(chatId: chatId, text: body, attachmentUrl: nil, token: t)
+             await reload() } catch { print(error) }
     }
 
-    func handlePhoto() async {
-        guard let item = photoItem, let token = session.token else { return }
-        guard let data = try? await item.loadTransferable(type: Data.self) else {
-            await MainActor.run { photoItem = nil }
-            return
-        }
-        busy = true
+    func sendImage(_ image: UIImage) async {
+        guard let t = session.token,
+              let data = image.jpegData(compressionQuality: 0.7) else { return }
+        busy = true; defer { busy = false }
         do {
-            let url = try await APIClient.upload(data: data,
-                                                 fileName: "\(UUID().uuidString).jpg",
-                                                 mime: "image/jpeg", token: token)
-            let m = try await APIClient.sendMessage(chatId: chatId, text: "",
-                                                    attachmentUrl: url, token: token)
-            await MainActor.run { messages.append(m) }
-        } catch {}
-        await MainActor.run { busy = false; photoItem = nil }
+            let url = try await APIClient.upload(data: data, fileName: "\(UUID().uuidString).jpg",
+                                                 mime: "image/jpeg", token: t)
+            let _ = try await APIClient.sendMessage(chatId: chatId, text: "", attachmentUrl: url, token: t)
+            await reload()
+        } catch { print(error) }
     }
 }
 
 struct MessageBubble: View {
-    let msg: Message
-    let isOwn: Bool
-    let showSender: Bool
+    let message: Message
+    let isOutgoing: Bool
+    let showName: Bool
 
     var body: some View {
         HStack {
-            if isOwn { Spacer() }
-            VStack(alignment: isOwn ? .trailing : .leading, spacing: 4) {
-                if showSender, let name = msg.senderName {
+            if isOutgoing { Spacer(minLength: 40) }
+            VStack(alignment: isOutgoing ? .trailing : .leading, spacing: 3) {
+                if showName, let name = message.senderName {
                     Text(name)
-                        .font(.caption.bold())
-                        .foregroundStyle(Color(hex: 0x2AABEE))
-                        .padding(.horizontal, 4)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(AvatarView.color(for: name))
+                        .padding(.horizontal, 6)
                 }
-                if let url = msg.attachmentUrl, let u = URL(string: url) {
-                    AsyncImage(url: u) { image in
-                        image.resizable().scaledToFit()
+                if let url = fullUrl(message.attachmentUrl) {
+                    AsyncImage(url: url) { img in
+                        img.resizable().scaledToFit()
                     } placeholder: {
-                        ProgressView().tint(.white)
+                        ProgressView().frame(height: 160)
                     }
-                    .frame(maxWidth: 220)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .frame(maxWidth: 240)
+                    .cornerRadius(16)
                 }
-                if let text = msg.text, !text.isEmpty {
-                    Text(text)
-                        .foregroundStyle(.white)
+                if let txt = message.text, !txt.isEmpty {
+                    Text(txt)
+                        .font(.system(size: 15))
+                        .foregroundColor(isOutgoing ? .white : .white)
                         .padding(10)
-                        .liquidGlass(cornerRadius: 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(isOutgoing
+                                      ? Color(red: 0.20, green: 0.60, blue: 0.86)
+                                      : Color.white.opacity(0.12))
+                        )
                 }
+                Text(msgTime(message.createdAt))
+                    .font(.system(size: 10))
+                    .foregroundColor(.white.opacity(0.5))
+                    .padding(.horizontal, 4)
             }
-            .frame(maxWidth: 260, alignment: isOwn ? .trailing : .leading)
-            if !isOwn { Spacer() }
+            if !isOutgoing { Spacer(minLength: 40) }
         }
-        .padding(.horizontal, 10)
     }
 }
