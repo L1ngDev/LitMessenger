@@ -55,3 +55,10 @@ jobs:
         with:
           name: LitMessenger.ipa
           path: LitMessenger.ipa
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build.log
+          path: build.log
