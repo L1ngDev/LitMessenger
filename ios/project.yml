@@ -20,3 +20,10 @@ targets:
         ENABLE_PREVIEWS: YES
         CODE_SIGN_STYLE: Automatic
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+schemes:
+  LitMessenger:
+    build:
+      targets:
+        LitMessenger: all
+    run:
+      config: Release

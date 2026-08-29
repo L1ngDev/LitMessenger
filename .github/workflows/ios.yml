@@ -21,6 +21,8 @@ jobs:
         run: xcodegen generate --spec ios/project.yml --project ios/
 
       - name: Build unsigned app (device)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set +e
           xcodebuild -project ios/LitMessenger.xcodeproj \
@@ -33,10 +35,10 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             build 2>&1 | tee build.log
           rc=${PIPESTATUS[0]}
-          grep -E 'error:' build.log | head -80 > err.txt
-          if [ -s err.txt ]; then
+          if [ $rc -ne 0 ]; then
+            tail -n 100 build.log > err.txt
             python3 -c "import json; json.dump({'body': open('err.txt').read()}, open('payload.json','w'))"
-            gh api -X POST "repos/L1ngDev/LitMessenger/commits/$GITHUB_SHA/comments" --input payload.json
+            gh api -H "Authorization: Bearer $GITHUB_TOKEN" -X POST "repos/L1ngDev/LitMessenger/commits/$GITHUB_SHA/comments" --input payload.json || echo "post-failed"
           fi
           exit $rc
 
