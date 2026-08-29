@@ -15,6 +15,10 @@ struct ChatListView: View {
             ZStack {
                 Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
                 List {
+                    TLSearchField(text: $query)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 8, leading: 14, bottom: 8, trailing: 14))
+                        .listRowBackground(Color.clear)
                     if query.trimmingCharacters(in: .whitespaces).isEmpty {
                         ForEach(chats) { chat in
                             ChatRow(chat: chat)
@@ -70,7 +74,6 @@ struct ChatListView: View {
             .navigationTitle("Чаты")
             .glassToolbar()
             .toolbarColorScheme(.dark, for: .navigationBar)
-            .searchable(text: $query, prompt: "Поиск")
             .onChange(of: query) { _, _ in Task { await runSearch() } }
             .overlay(alignment: .bottomTrailing) {
                 Button { showNew = true } label: {
@@ -117,6 +120,25 @@ struct ChatListView: View {
             path.append(id)
             await load()
         } catch { print(error) }
+    }
+}
+
+struct TLSearchField: View {
+    @Binding var text: String
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass").foregroundColor(.gray)
+            TextField("Поиск", text: $text)
+                .foregroundColor(.white)
+                .autocapitalization(.none)
+            if !text.isEmpty {
+                Button { text = "" } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundColor(.gray)
+                }
+            }
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.1)))
     }
 }
 

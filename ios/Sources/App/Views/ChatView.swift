@@ -189,6 +189,8 @@ struct Bubble: View {
     let outgoing: Bool
     let showName: Bool
 
+    private var bg: Color { outgoing ? tgOutgoing : tgIncoming }
+
     var body: some View {
         VStack(alignment: outgoing ? .trailing : .leading, spacing: 2) {
             if showName, let name = message.senderName {
@@ -213,19 +215,39 @@ struct Bubble: View {
                         .foregroundColor(.white)
                         .padding(10)
                 }
-                Text(msgTime(message.createdAt))
-                    .font(.system(size: 10))
-                    .foregroundColor(.white.opacity(0.55))
-                    .padding(.bottom, 2)
+                HStack(spacing: 3) {
+                    Text(msgTime(message.createdAt))
+                        .font(.system(size: 10))
+                        .foregroundColor(.white.opacity(0.55))
+                    if outgoing {
+                        ReadTicks(read: false)
+                    }
+                }
+                .padding(.bottom, 2)
+                .padding(.trailing, 2)
             }
-            .padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+            .padding(EdgeInsets(top: 7, leading: 11, bottom: 7, trailing: 11))
             .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(outgoing ? tgOutgoing : tgIncoming)
+                UnevenRoundedRectangle(
+                    topLeadingRadius: 17, bottomLeadingRadius: 17,
+                    bottomTrailingRadius: outgoing ? 4 : 17,
+                    topTrailingRadius: 17, style: .continuous
+                ).fill(bg)
             )
             .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: 264, alignment: outgoing ? .trailing : .leading)
+        .frame(maxWidth: UIScreen.main.bounds.width * 0.74, alignment: outgoing ? .trailing : .leading)
+    }
+}
+
+struct ReadTicks: View {
+    let read: Bool
+    var body: some View {
+        HStack(spacing: -5) {
+            Image(systemName: "checkmark").font(.system(size: 11, weight: .bold))
+            Image(systemName: "checkmark").font(.system(size: 11, weight: .bold))
+        }
+        .foregroundColor(read ? Color(red: 0.45, green: 0.75, blue: 1.0) : Color.white.opacity(0.6))
     }
 }
 
