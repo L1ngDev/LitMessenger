@@ -59,7 +59,7 @@ struct ChatView: View {
                     }
                     .padding(.vertical, 6)
                 }
-                .background(Color(red: 0.05, green: 0.05, blue: 0.07))
+                .background(Color(red: 0.090, green: 0.129, blue: 0.168))
                 .onChange(of: messages.count) { _, _ in
                     if let last = messages.last {
                         withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
@@ -228,11 +228,7 @@ struct Bubble: View {
             }
             .padding(EdgeInsets(top: 7, leading: 11, bottom: 7, trailing: 11))
             .background(
-                UnevenRoundedRectangle(
-                    topLeadingRadius: 17, bottomLeadingRadius: 17,
-                    bottomTrailingRadius: outgoing ? 4 : 17,
-                    topTrailingRadius: 17, style: .continuous
-                ).fill(bg)
+                RoundedRectangle(cornerRadius: 16, style: .continuous).fill(bg)
             )
             .fixedSize(horizontal: false, vertical: true)
         }

@@ -13,7 +13,7 @@ struct ChatListView: View {
     var body: some View {
         NavigationStack(path: $path) {
             ZStack {
-                Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
+                Color(red: 0.090, green: 0.129, blue: 0.168).ignoresSafeArea()
                 List {
                     TLSearchField(text: $query)
                         .listRowSeparator(.hidden)
@@ -25,7 +25,7 @@ struct ChatListView: View {
                                 .contentShape(Rectangle())
                                 .onTapGesture { path.append(chat.id) }
                                 .listRowBackground(Color.clear)
-                                .listRowSeparator(.hidden)
+                                .listRowSeparatorTint(Color.white.opacity(0.06))
                                 .listRowInsets(EdgeInsets(top: 4, leading: 14, bottom: 4, trailing: 14))
                         }
                     } else if let sr = searchResult {
@@ -146,29 +146,32 @@ struct ChatRow: View {
     let chat: Chat
     var body: some View {
         HStack(spacing: 12) {
-            AvatarView(title: chat.titleText, size: 50)
+            AvatarView(title: chat.titleText, size: 52, cornerRadius: 13)
             VStack(alignment: .leading, spacing: 3) {
-                Text(chat.titleText)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
+                HStack(spacing: 4) {
+                    Text(chat.titleText)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                    Spacer(minLength: 4)
+                    Text(chatTime(chat.updatedAt))
+                        .font(.system(size: 13))
+                        .foregroundColor(.gray)
+                }
                 HStack(spacing: 4) {
                     if chat.isGroup {
                         Image(systemName: "person.2.fill")
                             .foregroundColor(.gray).font(.system(size: 11))
                     }
                     Text(chat.lastMessage ?? "Нет сообщений")
-                        .font(.system(size: 14))
+                        .font(.system(size: 15))
                         .foregroundColor(.gray)
                         .lineLimit(1)
+                    Spacer(minLength: 4)
                 }
             }
-            Spacer(minLength: 6)
-            Text(chatTime(chat.updatedAt))
-                .font(.system(size: 12))
-                .foregroundColor(.gray)
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 6)
     }
 }
 

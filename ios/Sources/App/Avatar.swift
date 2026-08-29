@@ -14,17 +14,23 @@ extension String {
 struct AvatarView: View {
     let title: String
     var size: CGFloat = 44
+    var cornerRadius: CGFloat? = nil
 
     var body: some View {
         let color = Self.color(for: title)
-        Circle()
-            .fill(color)
-            .frame(width: size, height: size)
-            .overlay(
-                Text(title.initials)
-                    .font(.system(size: size * 0.38, weight: .semibold))
-                    .foregroundColor(.white)
-            )
+        Group {
+            if cornerRadius == nil {
+                Circle().fill(color)
+            } else {
+                RoundedRectangle(cornerRadius: cornerRadius!, style: .continuous).fill(color)
+            }
+        }
+        .frame(width: size, height: size)
+        .overlay(
+            Text(title.initials)
+                .font(.system(size: size * 0.38, weight: .semibold))
+                .foregroundColor(.white)
+        )
     }
 
     static let palette: [Color] = [
