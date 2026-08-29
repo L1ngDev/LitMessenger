@@ -20,6 +20,13 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate --spec ios/project.yml --project ios/
 
+      - name: Downgrade project format for Xcode 15.4
+        run: |
+          $f = "ios/LitMessenger.xcodeproj/project.pbxproj"
+          grep -n "objectVersion" "$f"
+          sed -i '' -E 's/objectVersion = [0-9]+;/objectVersion = 56;/' "$f"
+          grep -n "objectVersion" "$f"
+
       - name: Build unsigned app (device)
         run: |
           set -o pipefail
